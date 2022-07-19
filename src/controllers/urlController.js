@@ -7,11 +7,7 @@ const baseUrl = "http://localhost:3000";
 //<<============ GLobal Validation Defined ===================>>//
 
 const isValidRequestBody = (RequestBody) => {
-  if (
-    Object.keys(RequestBody).length == 0 ||
-    Object.keys(RequestBody).length > 1
-  )
-    return false;
+  if (!Object.keys(RequestBody).length > 0) return false;
   return true;
 };
 
