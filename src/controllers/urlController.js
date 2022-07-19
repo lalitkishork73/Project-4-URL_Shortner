@@ -39,12 +39,12 @@ const createUrl = async (req, res) => {
         const urlCode = shortid.generate(longUrl).toLowerCase()
 
         let checkDBUrlCode = await urlModel.findOne({ urlCode: urlCode })
-        if(checkDBUrlCode) return res.status(400).json({ status: false, message: "urlCode is needs unique" }) 
+        if(checkDBUrlCode) return res.status(400).json({ status: false, message: "urlCode is needs unique...!" }) 
 
         const shortUrl = baseUrl + '/' + urlCode
 
         let checkDBshortUrl = await urlModel.findOne({ shortUrl: shortUrl })
-        if(checkDBshortUrl) return res.status(400).json({ status: false, message: "shortUrl is needs unique" }) 
+        if(checkDBshortUrl) return res.status(400).json({ status: false, message: "shortUrl is needs unique...!" }) 
 
         const newUrl = { longUrl, shortUrl, urlCode }
         const short = await urlModel.create(newUrl)
@@ -59,7 +59,7 @@ const createUrl = async (req, res) => {
         return res.status(201).send({ status: true, data: newData })
 
     } catch (err) {
-        return res.status(504).send({ status: false, msg: err.message });
+        return res.status(500).send({ status: false, msg: err.message });
     }
 }
 
@@ -70,11 +70,13 @@ const createUrl = async (req, res) => {
 const getdata = async function (req, res) {
     try {
         let urlCode = req.params.urlCode;
+
+        if(!shortid.isValid(urlCode)) return res.status(400).send({ status: false, msg: "Enter valid length of shortid between 7-14 characters...!" });
         // console.log(urlCode)
 
         let data = await urlModel.findOne({ urlCode: urlCode });
         if (!data)
-            return res.status(404).send({ status: false, msg: "No data found" });
+            return res.status(404).send({ status: false, msg: "No data found...!" });
         // console.log(data)
 
         return res.status(302).redirect(data.longUrl);
