@@ -1,10 +1,10 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const urlController=require('../controllers/urlController')
+const { createUrl, getUrl } = require("../controllers/urlController");
 
+//<<============= API and Method Routes ==================>>//
 
+router.post("/url/shorten", createUrl);
+router.get("/:urlCode", getUrl);
 
-router.post("/url/shorten",urlController.createUrl)
-router.get("/:urlCode",urlController.getdata)
-
-module.exports = router
+module.exports = router;

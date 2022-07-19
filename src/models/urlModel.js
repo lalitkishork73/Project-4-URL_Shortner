@@ -1,4 +1,6 @@
 const mongoose = require('mongoose')
+
+//<========= Schema Or Structure Define =============>//
 const urlSchema = new mongoose.Schema({
 
     urlCode : {
