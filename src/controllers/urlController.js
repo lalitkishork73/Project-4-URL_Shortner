@@ -5,6 +5,7 @@ const shortid = require("shortid");
 const validUrl = require("valid-url")
 const redis = require("redis");
 const { promisify } = require("util");
+const { copyFileSync } = require("fs");
 const baseUrl = "http://localhost:3000";
 
 
@@ -56,6 +57,8 @@ let regexUrl =
 
 const createUrl = async (req, res) => {
   try {
+
+    const data =req.body;
     let longUrl = req.body.longUrl;
 
     //data in body
@@ -72,44 +75,40 @@ const createUrl = async (req, res) => {
     if (!regexUrl.test(longUrl.trim()))
       return res.status(400).send({ status: false, message: "Provide valid url longUrl in request..." });
 
-    if (!validUrl.isUri(longUrl))
+    if (!validUrl.isWebUri(longUrl))
       return res.status(400).send({ status: false, message: "Provide longUrl in rvalid formate ..." });
 
     //get from the cache
     let cahcelongUrl = await GET_ASYNC(`${longUrl}`)
+    console.log("redis data")
+    // console.log(cahcelongUrl)
     if (cahcelongUrl) {
-      return res.status(200).send({ satus: true, message: "Data from Redis", data: JSON.parse(cahcelongUrl) })
+      return res.status(201).send({ satus: true, message: "Data from Redis", data: JSON.parse(cahcelongUrl) })
     }
 
     // create urlcode
-    const urlCode = shortid.generate(longUrl).toLowerCase();
-
-    let checkDBUrlCode = await urlModel.findOne({ urlCode: urlCode });
-
-    if (checkDBUrlCode)
-      return res.status(400).send({ status: false, message: "urlCode is needs unique...!" });
+    const urlCode = shortid.generate(longUrl).toLowerCase(); 
 
     const shortUrl = baseUrl + "/" + urlCode;
+    data["shortUrl"] = shortUrl;
+    data["urlCode"] =urlCode;
+    console.log("ok")    
 
-    let checkDBshortUrl = await urlModel.findOne({ shortUrl: shortUrl });
 
-    if (checkDBshortUrl)
-      return res.status(400).send({ status: false, message: "shortUrl is needs unique...!" });
+    const createData =await urlModel.create(data)
 
-    const newUrl = { longUrl, shortUrl, urlCode };
+   
+    redisClient.set(`${longUrl}`, JSON.stringify(createData) , function(err,reply){
+      if(err) throw err;
+      redisClient.expire(`${longUrl}`, 20, function (err,reply){
+        if(err) throw err;
+        console.log(reply)
+      })
 
-    const short = await urlModel.create(newUrl);
+    })
+    console.log("data create in mongoDb server")
 
-    const newData = {
-      longUrl: short.longUrl,
-      shortUrl: short.shortUrl,
-      urlCode: short.urlCode,
-    };
-    //set in the cache
-    if (newData) {
-      await SET_ASYNC(`${longUrl}`, JSON.stringify(newData));
-      return res.status(201).send({ status: true, message: "Data from DB and it sets this data in Redis ", data: newData })
-    }
+    return res.status(201).send({status:true, data: {longUrl:createData.longUrl,urlCode:createData.urlCode, shortUrl:createData.shortUrl}})
 
 
   } catch (err) {
@@ -132,6 +131,10 @@ const getUrl = async function (req, res) {
       
 
       let data = await urlModel.findOne({ urlCode: urlCode });
+
+      if(!data){
+        return res.status(404).send({ status: false, message: "no such url present..!" }); 
+      }
 
       if (data) {
 
