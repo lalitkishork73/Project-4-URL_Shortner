@@ -1,6 +1,6 @@
-//<<================================ Application ==================================>>//
+//------------------- Application -------------------//
 
-//<<================== Importing Modules ======================>>//
+//------------------- Importing Modules -------------------//
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -8,11 +8,11 @@ const route = require("./routes/route.js");
 const { default: mongoose } = require("mongoose");
 const app = express();
 
-//<<========= Global or Application level Middleware =============>>//
+//------------------- Global or Application level Middleware-------------------//
 
 app.use(bodyParser.json());
 
-//<<=== Connection Establishment Between Application and Database =====>>//
+//------------------- Connection Establishment Between Application and Database -------------------//
 
 mongoose
   .connect(
@@ -32,7 +32,7 @@ app.use("*", (req, res) => {
     .send({ status: false, message: "plesae enter valid url endpoint" });
 });
 
-//<<============= Server Configuration =======>>//
+//------------------- Server Configuration -------------------//
 
 app.listen(process.env.PORT || 3000, function () {
   console.log("Express app running on port " + (process.env.PORT || 3000));

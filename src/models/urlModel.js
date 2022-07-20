@@ -1,8 +1,8 @@
-//<<================== Importing Modules ======================>>//
+//------------------- Importing Modules -------------------//
 
 const mongoose = require("mongoose");
 
-//<========= Schema Or Structure Define =============>//
+//-------------------Schema Or Structure Define-------------------//
 const urlSchema = new mongoose.Schema(
   {
     urlCode: {
@@ -27,6 +27,6 @@ const urlSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-//<<============ Exporting Modules ===============>>//
+//------------------- Exporting Modules -------------------//
 
 module.exports = mongoose.model("Url", urlSchema);
