@@ -4,13 +4,14 @@
   "description": "project 4 url shortner",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon src/index.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lalitkishork73/project-urlShortnerGroup20-.git"
   },
-  "author": "Lalitkishor k,Disha K,Lina G,Debashish D",
+  "author": "Lalitkishor K,Disha K,Lina G,Debashish D",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/lalitkishork73/project-urlShortnerGroup20-/issues"
