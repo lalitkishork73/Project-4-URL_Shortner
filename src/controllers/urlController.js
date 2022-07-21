@@ -20,15 +20,10 @@ redisClient.auth("PqUQxnu63j7X0pPsTqBoNRaHtrVMDuww", function (err) {
   if (err) throw err;
 });
 
-redisClient.on("connect", async function (err) {
+redisClient.on("connect", async function (err) {          //1. connect to the server
   console.log("Connected to Redis..");
 
 });
-
-
-
-//1. connect to the server
-//2. use the commands :
 
 //Connection setup for redis
 
@@ -59,7 +54,7 @@ let regexUrl =
 const createUrl = async (req, res) => {
   try {
 
-    const data =req.body;
+    const data = req.body;
     let longUrl = req.body.longUrl;
 
     //data in body
@@ -77,45 +72,63 @@ const createUrl = async (req, res) => {
       return res.status(400).send({ status: false, message: "Provide valid url longUrl in request..." });
 
     if (!validUrl.isWebUri(longUrl))
-      return res.status(400).send({ status: false, message: "Provide longUrl in rvalid formate ..." });
+      return res.status(400).send({ status: false, message: "Provide longUrl in valid formate ..." });
 
-    //get from the cache
+    
+      //get from the cache
     let cahcelongUrl = await GET_ASYNC(`${longUrl}`)
     console.log("redis data")
-    // console.log(cahcelongUrl)
+
     if (cahcelongUrl) {
       return res.status(200).send({ satus: true, message: "Data from Redis", data: JSON.parse(cahcelongUrl) })
     }
 
+    const checklongUrl = await urlModel.findOne({longUrl:longUrl }).select({createdAt:0, updatedAt:0, __v:0})
+
+    if(checklongUrl){
+
+      redisClient.set(`${longUrl}`, JSON.stringify(checklongUrl), function (err, reply) {
+        if (err) throw err;
+        redisClient.expire(`${longUrl}`, 20, function (err, reply) {
+          if (err) throw err;
+          console.log(reply)
+        })
+      
+      })
+    return res.status(200).send({ status: true, message: "data from mongoDb server and set to redis ", data: checklongUrl })
+}
+
+
+
     // create urlcode
-    const urlCode = shortid.generate(longUrl).toLowerCase(); 
+    const urlCode = shortid.generate(longUrl).toLowerCase();
 
     const shortUrl = baseUrl + "/" + urlCode;
 
     data["shortUrl"] = shortUrl;
-    data["urlCode"] =urlCode;
-    console.log("ok")    
+    data["urlCode"] = urlCode;
+    console.log("ok")
 
 
-    const createData =await urlModel.create(data);
+    const createData = await urlModel.create(data);
     const newData = {
-      longUrl:createData.longUrl,
-      urlCode:createData.urlCode, 
-      shortUrl:createData.shortUrl
-     }
+      longUrl: createData.longUrl,
+      urlCode: createData.urlCode,
+      shortUrl: createData.shortUrl
+    }
 
-   
-    await SET_ASYNC(`${longUrl}`, JSON.stringify(newData) , function(err,reply){
-      if(err) throw err;
-      redisClient.expire(`${longUrl}`, 20, function (err,reply){
-        if(err) throw err;
+
+    redisClient.set(`${longUrl}`, JSON.stringify(newData), function (err, reply) {
+      if (err) throw err;
+      redisClient.expire(`${longUrl}`, 20, function (err, reply) {
+        if (err) throw err;
         console.log(reply)
       })
 
     })
     console.log("data create in mongoDb server")
 
-    return res.status(201).send({status:true, message: "data create in mongoDb server and set to redis",data:newData})
+    return res.status(201).send({ status: true, message: "data create in mongoDb server and set to redis", data: newData })
 
 
   } catch (err) {
@@ -123,39 +136,46 @@ const createUrl = async (req, res) => {
   }
 };
 
+
+
 // -------------------------------- Get Or Redirect URL --------------------------------//
 
 // get redirect uri
 const getUrl = async function (req, res) {
   try {
-      let urlCode = req.params.urlCode;
-     
-      let cachedShortId = await GET_ASYNC(`${urlCode}`);
+    let urlCode = req.params.urlCode;
 
-      let parsedShortId=JSON.parse(cachedShortId)
+    if (!shortid.isValid(req.params.urlCode)) return res.status(400).send({ status: false, msg: "Enter valid length of shortid between 7-14 characters...!" });
 
-      if (parsedShortId) return res.status(302).redirect(parsedShortId.longUrl); /*Checking Data From Cache */
-      
+    let cachedShortId = await GET_ASYNC(`${urlCode}`);
 
-      let data = await urlModel.findOne({ urlCode: urlCode });
+    let parsedShortId = JSON.parse(cachedShortId)
 
-      if(!data){
-        return res.status(404).send({ status: false, message: "no such url present..!" }); 
-      }
+  if (parsedShortId) return res.status(302).redirect( parsedShortId.longUrl); /*Checking Data From Cache */
 
-      if (data) {
 
-          await SET_ASYNC(`${urlCode}`, JSON.stringify(data));
-          res.status(302).redirect(data.longUrl);
-          return
+    let data = await urlModel.findOne({ urlCode: urlCode });
 
-      } else {
+    if (data) {
 
-          return res.status(404).send({ status: false, msg: "No URL Found" });
-      }
+      redisClient.set(`${urlCode}`, JSON.stringify(data), function (err, reply) {
+        if (err) throw err;
+        redisClient.expire(`${urlCode}`,60*5 , function (err, reply) {
+          if (err) throw err;
+          console.log(reply)
+        })
+  
+      });
+      return res.status(302).redirect( data.longUrl);
 
-    } catch (err) {
-      res.status(500).send({ status: false, error: err.message });
+
+    } else {
+
+      return res.status(404).send({ status: false, msg: "No URL Found" });
+    }
+
+  } catch (err) {
+    res.status(500).send({ status: false, error: err.message });
   }
 };
 
