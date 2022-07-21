@@ -68,14 +68,10 @@ const createUrl = async (req, res) => {
       return res.status(400).send({ status: false, message: "Please provide longURL..." });
 
     // url valid
-    if (!regexUrl.test(longUrl.trim()))
+    if (!regexUrl.test(longUrl.trim()) || !validUrl.isWebUri(longUrl))
       return res.status(400).send({ status: false, message: "Provide valid url longUrl in request..." });
 
-    if (!validUrl.isWebUri(longUrl))
-      return res.status(400).send({ status: false, message: "Provide longUrl in valid formate ..." });
-
-    
-      //get from the cache
+    //get from the cache
     let cahcelongUrl = await GET_ASYNC(`${longUrl}`)
     console.log("redis data")
 
@@ -83,20 +79,20 @@ const createUrl = async (req, res) => {
       return res.status(200).send({ satus: true, message: "Data from Redis", data: JSON.parse(cahcelongUrl) })
     }
 
-    const checklongUrl = await urlModel.findOne({longUrl:longUrl }).select({createdAt:0, updatedAt:0, __v:0})
+    const checklongUrl = await urlModel.findOne({ longUrl: longUrl }).select({ createdAt: 0, updatedAt: 0, __v: 0 })
 
-    if(checklongUrl){
+    if (checklongUrl) {
 
       redisClient.set(`${longUrl}`, JSON.stringify(checklongUrl), function (err, reply) {
         if (err) throw err;
-        redisClient.expire(`${longUrl}`, 20, function (err, reply) {
+        redisClient.expire(`${longUrl}`, 60 * 20, function (err, reply) {
           if (err) throw err;
           console.log(reply)
         })
-      
+
       })
-    return res.status(200).send({ status: true, message: "data from mongoDb server and set to redis ", data: checklongUrl })
-}
+      return res.status(200).send({ status: true, message: "data from mongoDb server  ", data: checklongUrl })
+    }
 
 
 
@@ -120,7 +116,7 @@ const createUrl = async (req, res) => {
 
     redisClient.set(`${longUrl}`, JSON.stringify(newData), function (err, reply) {
       if (err) throw err;
-      redisClient.expire(`${longUrl}`, 20, function (err, reply) {
+      redisClient.expire(`${longUrl}`, 60 * 20, function (err, reply) {
         if (err) throw err;
         console.log(reply)
       })
@@ -151,7 +147,7 @@ const getUrl = async function (req, res) {
 
     let parsedShortId = JSON.parse(cachedShortId)
 
-  if (parsedShortId) return res.status(302).redirect( parsedShortId.longUrl); /*Checking Data From Cache */
+    if (parsedShortId) return res.status(302).redirect(parsedShortId.longUrl); /*Checking Data From Cache */
 
 
     let data = await urlModel.findOne({ urlCode: urlCode });
@@ -160,13 +156,13 @@ const getUrl = async function (req, res) {
 
       redisClient.set(`${urlCode}`, JSON.stringify(data), function (err, reply) {
         if (err) throw err;
-        redisClient.expire(`${urlCode}`,60*5 , function (err, reply) {
+        redisClient.expire(`${urlCode}`, 60 * 20, function (err, reply) {
           if (err) throw err;
           console.log(reply)
         })
-  
+
       });
-      return res.status(302).redirect( data.longUrl);
+      return res.status(302).redirect(data.longUrl);
 
 
     } else {
