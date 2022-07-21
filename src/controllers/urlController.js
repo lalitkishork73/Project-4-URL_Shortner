@@ -20,8 +20,9 @@ redisClient.auth("PqUQxnu63j7X0pPsTqBoNRaHtrVMDuww", function (err) {
   if (err) throw err;
 });
 
-redisClient.on("connect", async function () {
+redisClient.on("connect", async function (err) {
   console.log("Connected to Redis..");
+
 });
 
 
@@ -83,22 +84,28 @@ const createUrl = async (req, res) => {
     console.log("redis data")
     // console.log(cahcelongUrl)
     if (cahcelongUrl) {
-      return res.status(201).send({ satus: true, message: "Data from Redis", data: JSON.parse(cahcelongUrl) })
+      return res.status(200).send({ satus: true, message: "Data from Redis", data: JSON.parse(cahcelongUrl) })
     }
 
     // create urlcode
     const urlCode = shortid.generate(longUrl).toLowerCase(); 
 
     const shortUrl = baseUrl + "/" + urlCode;
+
     data["shortUrl"] = shortUrl;
     data["urlCode"] =urlCode;
     console.log("ok")    
 
 
-    const createData =await urlModel.create(data)
+    const createData =await urlModel.create(data);
+    const newData = {
+      longUrl:createData.longUrl,
+      urlCode:createData.urlCode, 
+      shortUrl:createData.shortUrl
+     }
 
    
-    redisClient.set(`${longUrl}`, JSON.stringify(createData) , function(err,reply){
+    await SET_ASYNC(`${longUrl}`, JSON.stringify(newData) , function(err,reply){
       if(err) throw err;
       redisClient.expire(`${longUrl}`, 20, function (err,reply){
         if(err) throw err;
@@ -108,7 +115,7 @@ const createUrl = async (req, res) => {
     })
     console.log("data create in mongoDb server")
 
-    return res.status(201).send({status:true, data: {longUrl:createData.longUrl,urlCode:createData.urlCode, shortUrl:createData.shortUrl}})
+    return res.status(201).send({status:true, message: "data create in mongoDb server and set to redis",data:newData})
 
 
   } catch (err) {
@@ -147,9 +154,7 @@ const getUrl = async function (req, res) {
           return res.status(404).send({ status: false, msg: "No URL Found" });
       }
 
-      
-
-  } catch (err) {
+    } catch (err) {
       res.status(500).send({ status: false, error: err.message });
   }
 };
