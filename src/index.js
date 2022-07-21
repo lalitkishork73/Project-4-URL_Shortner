@@ -7,6 +7,7 @@ const bodyParser = require("body-parser");
 const route = require("./routes/route.js");
 const { default: mongoose } = require("mongoose");
 const app = express();
+const testPort = 3000;
 
 //------------------- Global or Application level Middleware-------------------//
 
@@ -21,7 +22,7 @@ mongoose
       useNewUrlParser: true,
     }
   )
-  .then(() => console.log("MongoDb is connected !"))
+  .then(() => console.log("MongoDb is connected!"))
   .catch((err) => console.log(err));
 
 app.use("/", route);
@@ -34,6 +35,6 @@ app.use("*", (req, res) => {
 
 //------------------- Server Configuration -------------------//
 
-app.listen(process.env.PORT || 3000, function () {
-  console.log("Express app running on port " + (process.env.PORT || 3000));
+app.listen(process.env.PORT || testPort, function () {
+  console.log("Express app running on port " + (process.env.PORT || testPort));
 });

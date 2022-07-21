@@ -6,7 +6,7 @@ const validUrl = require("valid-url");
 const redis = require("redis");
 const { promisify } = require("util");
 const baseUrl = "http://localhost:3000";
-const timeLimit = 10;
+const timeLimit = 20;
 
 //-------------------------------- GLobal Validation Defined--------------------------------//
 
@@ -24,7 +24,7 @@ const isValid = (value) => {
 let regexUrl =
   /^(https[s]?:\/\/){0,1}(www\.){0,1}[a-zA-Z0-9\.\-]+\.[a-zA-Z]{2,5}[\.]{0,1}/;
 
-//--------------------Connect to Redis-------->>>
+//--------------------Connect to Redis---------------------------->>>//
 
 const redisClient = redis.createClient(
   14064,
@@ -36,8 +36,9 @@ redisClient.auth("PqUQxnu63j7X0pPsTqBoNRaHtrVMDuww", function (err) {
   if (err) throw err;
 });
 
+//------ Connect to the Server---------------->>
+
 redisClient.on("connect", async function (err) {
-  //------ Connect to the Server---------------->>
   console.log("Connected to Redis!");
 });
 
@@ -48,23 +49,20 @@ const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 
 //----------------------- API Controllers--------------------------------//
 
-//--------------------------------Create URL-----------------------------//
+//--------------------------Create URL-----------------------------//
 
 const createUrl = async (req, res) => {
   try {
     const data = req.body;
     let longUrl = req.body.longUrl;
 
-    //----------------- Intial Validation of Data ---------------------------//
-    //-------- BodyData Validation -------->>
+    //----------------- Intial Validation of Data ----------------//
 
     if (!isValidRequestBody(data))
       return res.status(400).send({
         status: false,
         message: "Data required in request body!",
       });
-
-    //----------- URL Validation ---------->>
 
     if (!isValid(longUrl))
       return res
@@ -77,42 +75,47 @@ const createUrl = async (req, res) => {
         message: "Provide valid url longUrl in request!",
       });
 
-    //--------- Get from the Cache Memory ---------->
+    //--------- Get DAta from the Cache Memory ---------->>
+
     let cahcelongUrl = await GET_ASYNC(`${longUrl}`);
     console.log("redis data");
 
     if (cahcelongUrl) {
       return res.status(200).send({
-        satus: true,
+        status: true,
         message: "Data from Redis",
         data: JSON.parse(cahcelongUrl),
       });
     }
+
+    //----- Find Data From Database and Set in Cache --------------->>
 
     const checklongUrl = await urlModel
       .findOne({ longUrl: longUrl })
       .select({ createdAt: 0, updatedAt: 0, __v: 0 });
 
     if (checklongUrl) {
-      await SET_ASYNC(`${longUrl}`, JSON.stringify(checklongUrl), "EX", 10);
-
-      
-      // redisClient.expire(`${longUrl}`, 10);
-
-     /*  redisClient.set(`${longUrl}`, JSON.stringify(checklongUrl), function (err, reply) {
+      await SET_ASYNC(
+        `${longUrl}`,
+        JSON.stringify(checklongUrl),
+        "EX",
+        timeLimit
+      );
+      return res.status(200).send({
+        status: true,
+        message: "data from mongoDb server",
+        data: checklongUrl,
+      });
+    }
+    //------- Old Method -----------//
+    /*  redisClient.set(`${longUrl}`, JSON.stringify(checklongUrl), function (err, reply) {
         if (err) throw err;
         redisClient.expire(`${longUrl}`, 60 * 20, function (err, reply) {
           if (err) throw err;
           console.log(reply)})}) */
 
-      return res.status(200).send({
-        status: true,
-        message: "data from mongoDb server  ",
-        data: checklongUrl,
-      });
-    }
+    // ---------------- Create Urlcode -------------------->>
 
-    // create urlcode
     const urlCode = shortid.generate(longUrl).toLowerCase();
 
     const shortUrl = baseUrl + "/" + urlCode;
@@ -128,17 +131,18 @@ const createUrl = async (req, res) => {
       shortUrl: createData.shortUrl,
     };
 
-     /* redisClient.set(`${longUrl}`, JSON.stringify(newData), function (err, reply) {
+    //-------Old Method ------------//
+    /* redisClient.set(`${longUrl}`, JSON.stringify(newData), function (err, reply) {
       if (err) throw err;
       redisClient.expire(`${longUrl}`, 60 * 20, function (err, reply) {
         if (err) throw err;
         console.log(reply)
       })}) */
 
-    await SET_ASYNC(`${longUrl}`, JSON.stringify(newData),'EX',10);
-    // redisClient.expire(`${longUrl}`, 10);
+    //---------------Set Data in Chache Memory Server-------->>
+
+    await SET_ASYNC(`${longUrl}`, JSON.stringify(newData), "EX", timeLimit);
     await SET_ASYNC(`${shortUrl}`, JSON.stringify(longUrl));
-    console.log("data create in mongoDb server");
 
     return res.status(201).send({
       status: true,
@@ -152,34 +156,33 @@ const createUrl = async (req, res) => {
 
 // -------------------------------- Get Or Redirect URL --------------------------------//
 
-// get redirect uri
 const getUrl = async function (req, res) {
   try {
     let urlCode = req.params.urlCode;
 
+    //---------- validation --------->>
+
     if (!shortid.isValid(urlCode))
       return res.status(400).send({
         status: false,
-        msg: "Enter valid length of shortid between 7-14 characters...!",
+        massage: "Enter valid length of shortid between 7-14 characters...!",
       });
 
+    //----------- Get Data From Cache Memory ----->>
+
     let cachedShortId = await GET_ASYNC(`${urlCode}`);
-
     let parsedShortId = JSON.parse(cachedShortId);
+    if (parsedShortId) return res.status(302).redirect(parsedShortId.longUrl);
 
-    if (parsedShortId)
-      return res
-        .status(302)
-        .redirect(parsedShortId.longUrl); /*Checking Data From Cache */
+    //------ Get Data From Database And Set into The Cache ---->>
 
     let data = await urlModel.findOne({ urlCode: urlCode });
 
     if (data) {
-      await SET_ASYNC(`${longUrl}`, JSON.stringify(data));
-      // redisClient.expire(`${urlCode}`, timeLimit);
+      await SET_ASYNC(`${urlCode}`, JSON.stringify(data));
       return res.status(302).redirect(data.longUrl);
     } else {
-      return res.status(404).send({ status: false, msg: "No URL Found" });
+      return res.status(404).send({ status: false, massage: "No URL Found" });
     }
   } catch (err) {
     res.status(500).send({ status: false, error: err.message });
