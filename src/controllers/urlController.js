@@ -92,7 +92,7 @@ const createUrl = async (req, res) => {
 
     const checklongUrl = await urlModel
       .findOne({ longUrl: longUrl })
-      .select({ createdAt: 0, updatedAt: 0, __v: 0 });
+      .select({ createdAt: 0, updatedAt: 0, __v: 0, _id: 0 });
 
     if (checklongUrl) {
       await SET_ASYNC(
@@ -142,7 +142,7 @@ const createUrl = async (req, res) => {
     //---------------Set Data in Chache Memory Server-------->>
 
     await SET_ASYNC(`${longUrl}`, JSON.stringify(newData), "EX", timeLimit);
-    await SET_ASYNC(`${shortUrl}`, JSON.stringify(longUrl));
+    // await SET_ASYNC(`${shortUrl}`, JSON.stringify(longUrl));
 
     return res.status(201).send({
       status: true,
