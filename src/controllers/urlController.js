@@ -18,7 +18,7 @@ const isValidRequestBody = (RequestBody) => {
 const isValid = (value) => {
   if (typeof value === "undefined" || typeof value === null) return false;
   if (typeof value === "string" && value.trim().length === 0) return false;
-  return true;
+  if (typeof value === "number") return true;
 };
 
 let regexUrl =
