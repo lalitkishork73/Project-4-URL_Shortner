@@ -3,7 +3,7 @@
 const urlModel = require("../models/urlModel");
 const shortid = require("shortid");
 const validUrl = require("valid-url");
-const redis = require("redis");
+const { redisClient } = require("../redisServer");
 const { promisify } = require("util");
 const baseUrl = "http://localhost:3000";
 const timeLimit = 20;
@@ -18,29 +18,13 @@ const isValidRequestBody = (RequestBody) => {
 const isValid = (value) => {
   if (typeof value === "undefined" || typeof value === null) return false;
   if (typeof value === "string" && value.trim().length === 0) return false;
-  if (typeof value === "number") return true;
+  if (typeof value === "number") return false;
+  if (typeof value !== "string") return false;
+  return true;
 };
 
 let regexUrl =
   /^(https[s]?:\/\/){0,1}(www\.){0,1}[a-zA-Z0-9\.\-]+\.[a-zA-Z]{2,5}[\.]{0,1}/;
-
-//--------------------Connect to Redis---------------------------->>>//
-
-const redisClient = redis.createClient(
-  14064,
-  "redis-14064.c301.ap-south-1-1.ec2.cloud.redislabs.com",
-  { no_ready_check: true }
-);
-
-redisClient.auth("PqUQxnu63j7X0pPsTqBoNRaHtrVMDuww", function (err) {
-  if (err) throw err;
-});
-
-//------ Connect to the Server---------------->>
-
-redisClient.on("connect", async function (err) {
-  console.log("Connected to Redis!");
-});
 
 //------- Connection Setup for Redis------->>
 
@@ -78,8 +62,6 @@ const createUrl = async (req, res) => {
     //--------- Get DAta from the Cache Memory ---------->>
 
     let cahcelongUrl = await GET_ASYNC(`${longUrl}`);
-    console.log("redis data");
-
     if (cahcelongUrl) {
       return res.status(200).send({
         status: true,
@@ -107,7 +89,7 @@ const createUrl = async (req, res) => {
         data: checklongUrl,
       });
     }
-    //------- Old Method -----------//
+    //------- another Method -----------//
     /*  redisClient.set(`${longUrl}`, JSON.stringify(checklongUrl), function (err, reply) {
         if (err) throw err;
         redisClient.expire(`${longUrl}`, 60 * 20, function (err, reply) {
@@ -122,7 +104,6 @@ const createUrl = async (req, res) => {
 
     data["shortUrl"] = shortUrl;
     data["urlCode"] = urlCode;
-    console.log("ok");
 
     const createData = await urlModel.create(data);
     const newData = {
@@ -131,7 +112,7 @@ const createUrl = async (req, res) => {
       shortUrl: createData.shortUrl,
     };
 
-    //-------Old Method ------------//
+    //-------another Method ------------//
     /* redisClient.set(`${longUrl}`, JSON.stringify(newData), function (err, reply) {
       if (err) throw err;
       redisClient.expire(`${longUrl}`, 60 * 20, function (err, reply) {
@@ -142,7 +123,6 @@ const createUrl = async (req, res) => {
     //---------------Set Data in Chache Memory Server-------->>
 
     await SET_ASYNC(`${longUrl}`, JSON.stringify(newData), "EX", timeLimit);
-    // await SET_ASYNC(`${shortUrl}`, JSON.stringify(longUrl));
 
     return res.status(201).send({
       status: true,

@@ -25,6 +25,7 @@ mongoose
   .then(() => console.log("MongoDb is connected!"))
   .catch((err) => console.log(err));
 
+
 app.use("/", route);
 
 app.use("*", (req, res) => {
@@ -38,3 +39,4 @@ app.use("*", (req, res) => {
 app.listen(process.env.PORT || testPort, function () {
   console.log("Express app running on port " + (process.env.PORT || testPort));
 });
+
