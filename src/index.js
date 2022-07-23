@@ -17,14 +17,13 @@ app.use(bodyParser.json());
 
 mongoose
   .connect(
-    "mongodb+srv://disha123:hl6LMcJIED1eCZhr@cluster0.hrerz.mongodb.net/group20Database",
+    "mongodb+srv://lalitkishork73:UzPr9bb6Wvxda9eC@cluster0.o2wavxe.mongodb.net/project-4-db-grp-20?retryWrites=true&w=majority",
     {
       useNewUrlParser: true,
     }
   )
   .then(() => console.log("MongoDb is connected!"))
   .catch((err) => console.log(err));
-
 
 app.use("/", route);
 
@@ -39,4 +38,3 @@ app.use("*", (req, res) => {
 app.listen(process.env.PORT || testPort, function () {
   console.log("Express app running on port " + (process.env.PORT || testPort));
 });
-
