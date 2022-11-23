@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Xanh+Mono:ital@1&display=swap');
+ 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base{
+    html{
+        margin:0;
+        padding: 0;
+        font-family: 'Xanh Mono', monospace;
+        background-image: url('https://images.pexels.com/photos/259915/pexels-photo-259915.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1') ;
+        background-size: cover;
+    }
+}
