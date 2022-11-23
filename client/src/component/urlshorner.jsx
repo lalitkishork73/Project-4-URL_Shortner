@@ -18,8 +18,8 @@ const Urlshorner = () => {
                     longUrl:url
                 }
             }).then((responce=>{
-                console.log(JSON.stringify(responce.data.data)+"post responce")
-                setOut(responce.data.data.longUrl)
+                console.log(JSON.parse(JSON.stringify(responce.data.data))+"post responce")
+                setOut(responce.data.data.shortUrl)
             }));
             
         }catch(err){
@@ -58,6 +58,7 @@ const Urlshorner = () => {
             </div>
             <div className='flex flex-col justify-center items-center h-[100%] w-[100%]'>
                 <div className='flex flex-col justify-center items-center    border-black w-1/2 h-1/2 bg-gray-900/50 backdrop-blur-sm rounded-lg'> 
+                        <h1 className='text-white font-bold mb-5'>Please Enter Your Long Url!</h1>
                         <input type="text" value={url} name="url" 
                         onChange={(e)=>setUrl(e.target.value)}
                         placeholder='paste URL' className="border-cyan-500 border-2 rounded-md p-1 w-[90%] bg-transparent text-white font-bold"  />

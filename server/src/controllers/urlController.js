@@ -175,24 +175,10 @@ const getUrl = async function (req, res) {
 };
 const getUrlByLongU = async function (req, res) {
   try {
-    let urlCode = req.params.longUrl;
-    //---------- validation --------->>
-
-    if (!shortid.isValid(urlCode))
-      return res.status(400).send({
-        status: false,
-        massage: "Enter valid length of shortid between 7-14 characters...!",
-      });
-
-    //----------- Get Data From Cache Memory ----->>
-
-    let cachedShortId = await GET_ASYNC(`${urlCode}`);
-    let parsedShortId = JSON.parse(cachedShortId);
-    if (parsedShortId) return res.status(302).redirect(parsedShortId.longUrl);
 
     //------ Get Data From Database And Set into The Cache ---->>
 
-    let data = await urlModel.findOne({ longUrl: urlCode });
+    let data = await urlModel.find();
 
     if (data) {
       await SET_ASYNC(`${urlCode}`, JSON.stringify(data));

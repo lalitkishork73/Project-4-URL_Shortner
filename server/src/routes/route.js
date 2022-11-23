@@ -8,7 +8,7 @@ const { createUrl, getUrl,getUrlByLongU } = require("../controllers/urlControlle
 
 router.post("/url/shorten", createUrl);
 router.get("/:urlCode", getUrl);
-router.get("/:longUrl", getUrlByLongU);
+router.get("/url", getUrlByLongU);
 
 //------------------- Exporting Modules -------------------//
 
