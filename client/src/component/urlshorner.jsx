@@ -19,7 +19,7 @@ const Urlshorner = () => {
                 }
             }).then((responce=>{
                 console.log(JSON.stringify(responce.data.data)+"post responce")
-                setOut(responce.data.data.urlCode)
+                setOut(responce.data.data.longUrl)
             }));
             
         }catch(err){
