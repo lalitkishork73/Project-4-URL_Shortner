@@ -7,13 +7,17 @@ const bodyParser = require("body-parser");
 const route = require("./routes/route.js");
 const { default: mongoose } = require("mongoose");
 const app = express();
-const testPort = 3000;
+const testPort = {test:3001};
+const cors = require("cors");
+
+
 
 //------------------- Global or Application level Middleware-------------------//
 
 app.use(bodyParser.json());
-
+app.use(cors());
 //------------------- Connection Establishment Between Application and Database -------------------//
+
 
 mongoose
   .connect(
@@ -35,6 +39,6 @@ app.use("*", (req, res) => {
 
 //------------------- Server Configuration -------------------//
 
-app.listen(process.env.PORT || testPort, function () {
-  console.log("Express app running on port " + (process.env.PORT || testPort));
+app.listen(process.env.PORT || testPort.test, function () {
+  console.log("Express app running on port " + (process.env.PORT || testPort.test));
 });

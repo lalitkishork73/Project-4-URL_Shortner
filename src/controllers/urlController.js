@@ -5,8 +5,11 @@ const shortid = require("shortid");
 const validUrl = require("valid-url");
 const { redisClient } = require("../redisServer");
 const { promisify } = require("util");
-const baseUrl = "http://localhost:3000";
-const timeLimit = 20;
+const baseUrl = "http://localhost:3001"
+const timeLimit = 10;
+
+
+
 
 //-------------------------------- GLobal Validation Defined--------------------------------//
 
@@ -37,8 +40,10 @@ const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 
 const createUrl = async (req, res) => {
   try {
+
+
     const data = req.body;
-    let longUrl = req.body.longUrl;
+    let longUrl = data.longUrl;
 
     //----------------- Intial Validation of Data ----------------//
 
@@ -123,6 +128,7 @@ const createUrl = async (req, res) => {
     //---------------Set Data in Chache Memory Server-------->>
 
     await SET_ASYNC(`${longUrl}`, JSON.stringify(newData), "EX", timeLimit);
+    console.log("testPort")
 
     return res.status(201).send({
       status: true,
@@ -139,7 +145,6 @@ const createUrl = async (req, res) => {
 const getUrl = async function (req, res) {
   try {
     let urlCode = req.params.urlCode;
-
     //---------- validation --------->>
 
     if (!shortid.isValid(urlCode))
@@ -168,7 +173,38 @@ const getUrl = async function (req, res) {
     res.status(500).send({ status: false, error: err.message });
   }
 };
+const getUrlByLongU = async function (req, res) {
+  try {
+    let urlCode = req.params.longUrl;
+    //---------- validation --------->>
+
+    if (!shortid.isValid(urlCode))
+      return res.status(400).send({
+        status: false,
+        massage: "Enter valid length of shortid between 7-14 characters...!",
+      });
+
+    //----------- Get Data From Cache Memory ----->>
+
+    let cachedShortId = await GET_ASYNC(`${urlCode}`);
+    let parsedShortId = JSON.parse(cachedShortId);
+    if (parsedShortId) return res.status(302).redirect(parsedShortId.longUrl);
+
+    //------ Get Data From Database And Set into The Cache ---->>
+
+    let data = await urlModel.findOne({ longUrl: urlCode });
+
+    if (data) {
+      await SET_ASYNC(`${urlCode}`, JSON.stringify(data));
+      return res.status(200).send({ status: true, data: data });
+    } else {
+      return res.status(404).send({ status: false, massage: "No URL Found" });
+    }
+  } catch (err) {
+    res.status(500).send({ status: false, error: err.message });
+  }
+};
 
 //------------------------ Exporting Modules-------------------------//
 
-module.exports = { createUrl, getUrl };
+module.exports = { createUrl, getUrl, getUrlByLongU };
