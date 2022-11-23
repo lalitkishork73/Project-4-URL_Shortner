@@ -2,13 +2,13 @@
 
 const express = require("express");
 const router = express.Router();
-const { createUrl, getUrl,getUrlByLongU } = require("../controllers/urlController");
+const { createUrl, getUrl,getAllUrl } = require("../controllers/urlController");
 
 //------------------- API and Method Routes-------------------//
 
 router.post("/url/shorten", createUrl);
+router.get("/url", getAllUrl);
 router.get("/:urlCode", getUrl);
-router.get("/:longUrl", getUrlByLongU);
 
 //------------------- Exporting Modules -------------------//
 
