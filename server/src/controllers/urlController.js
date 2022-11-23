@@ -173,19 +173,13 @@ const getUrl = async function (req, res) {
     res.status(500).send({ status: false, error: err.message });
   }
 };
-const getUrlByLongU = async function (req, res) {
+const getAllUrl = async function (req, res) {
   try {
 
     //------ Get Data From Database And Set into The Cache ---->>
-
     let data = await urlModel.find();
+    return res.status(200).send({ status: true, data: data })
 
-    if (data) {
-      await SET_ASYNC(`${urlCode}`, JSON.stringify(data));
-      return res.status(200).send({ status: true, data: data });
-    } else {
-      return res.status(404).send({ status: false, massage: "No URL Found" });
-    }
   } catch (err) {
     res.status(500).send({ status: false, error: err.message });
   }
@@ -193,4 +187,4 @@ const getUrlByLongU = async function (req, res) {
 
 //------------------------ Exporting Modules-------------------------//
 
-module.exports = { createUrl, getUrl, getUrlByLongU };
+module.exports = { createUrl, getUrl, getAllUrl };
